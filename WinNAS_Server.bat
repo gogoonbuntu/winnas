@@ -2,6 +2,14 @@
 chcp 65001 >nul 2>&1
 title WinNAS Server
 
+:: Request admin privileges
+net session >nul 2>&1
+if %errorLevel% neq 0 (
+    echo [INFO] Requesting administrative privileges...
+    powershell -Command "Start-Process '%~dpnx0' -Verb RunAs"
+    exit /b
+)
+
 cd /d "%~dp0"
 
 where node >nul 2>&1
