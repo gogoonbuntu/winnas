@@ -50,7 +50,6 @@ Source: "public\*"; DestDir: "{app}\public"; Flags: ignoreversion recursesubdirs
 Source: "package.json"; DestDir: "{app}"; Flags: ignoreversion
 Source: "package-lock.json"; DestDir: "{app}"; Flags: ignoreversion
 Source: "setup.js"; DestDir: "{app}"; Flags: ignoreversion
-Source: "change_password.js"; DestDir: "{app}"; Flags: ignoreversion
 Source: "README.md"; DestDir: "{app}"; Flags: ignoreversion
 Source: "SETUP.md"; DestDir: "{app}"; Flags: ignoreversion
 
