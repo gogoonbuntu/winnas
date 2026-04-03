@@ -292,6 +292,7 @@
         <div class="settings-tabs">
           <button class="settings-tab active" onclick="switchSettingsTab('password', this)">비밀번호 변경</button>
           <button class="settings-tab" onclick="switchSettingsTab('devices', this)">기기 관리</button>
+          <button class="settings-tab" onclick="switchSettingsTab('system', this)">시스템</button>
         </div>
 
         <!-- Password Tab -->
@@ -317,6 +318,22 @@
         <div class="settings-content" id="tab-devices" style="display: none;">
           <div class="device-list-container" id="deviceListContainer">
             <!-- Loaded dynamically -->
+          </div>
+        </div>
+
+        <!-- System Tab -->
+        <div class="settings-content" id="tab-system" style="display: none;">
+          <div class="system-settings">
+            <div class="setting-item">
+              <div class="setting-info">
+                <div class="setting-title">Windows 시작 시 자동 실행</div>
+                <div class="setting-desc">컴퓨터를 켤 때 WinNAS 서버가 자동으로 시작됩니다.</div>
+              </div>
+              <label class="toggle-switch">
+                <input type="checkbox" id="startupToggle" onchange="toggleStartup(this.checked)">
+                <span class="toggle-slider"></span>
+              </label>
+            </div>
           </div>
         </div>
       </div>

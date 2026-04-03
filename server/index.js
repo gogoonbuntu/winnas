@@ -70,6 +70,7 @@ async function startServer() {
   app.use('/api/devices', require('./routes/devices'));
   app.use('/api/files', require('./routes/files'));
   app.use('/api/media', require('./routes/media'));
+  app.use('/api/system', require('./routes/system'));
 
   // SPA fallback - serve index.html for non-API routes
   app.get('*', (req, res) => {

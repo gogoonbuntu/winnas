@@ -433,6 +433,45 @@ function switchSettingsTab(tab, btn) {
 
   if (tab === 'devices') {
     loadDeviceList();
+  } else if (tab === 'system') {
+    loadStartupStatus();
+  }
+}
+
+async function loadStartupStatus() {
+  try {
+    const response = await fetch(`${API_BASE}/api/system/startup`, {
+      headers: getHeaders()
+    });
+    if (response.ok) {
+      const data = await response.json();
+      document.getElementById('startupToggle').checked = data.enabled;
+    }
+  } catch (err) {
+    console.error('Load startup status error:', err);
+  }
+}
+
+async function toggleStartup(enabled) {
+  try {
+    const response = await fetch(`${API_BASE}/api/system/startup`, {
+      method: 'PUT',
+      headers: getHeaders(),
+      body: JSON.stringify({ enabled })
+    });
+
+    const data = await response.json();
+
+    if (response.ok) {
+      showToast(data.message, 'success');
+    } else {
+      showToast(data.error || '설정 변경 실패', 'error');
+      // Revert toggle
+      document.getElementById('startupToggle').checked = !enabled;
+    }
+  } catch (err) {
+    showToast('시작프로그램 설정 변경에 실패했습니다.', 'error');
+    document.getElementById('startupToggle').checked = !enabled;
   }
 }
 
