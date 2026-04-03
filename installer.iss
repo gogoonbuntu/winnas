@@ -2,7 +2,7 @@
 ; Builds a professional installer for WinNAS personal NAS server
 
 #define MyAppName "WinNAS"
-#define MyAppVersion "1.0.2"
+#define MyAppVersion "1.0.3"
 #define MyAppPublisher "WinNAS"
 #define MyAppURL "https://github.com/gogoonbuntu/winnas"
 #define MyAppExeName "WinNAS_Server.bat"
@@ -71,7 +71,7 @@ Name: "{autodesktop}\WinNAS"; Filename: "{app}\WinNAS_Server.bat"; WorkingDir: "
 Name: "{userstartup}\WinNAS Server"; Filename: "{app}\WinNAS_Server.bat"; WorkingDir: "{app}"; Tasks: startupicon
 
 [Run]
-Filename: "cmd.exe"; Parameters: "/K cd /d ""{app}"" && node setup.js"; Description: "Run initial setup (first time only)"; WorkingDir: "{app}"; Flags: postinstall skipifsilent unchecked
+Filename: "{app}\run_setup.bat"; Description: "초기 설정 실행 (최초 1회 필요)"; WorkingDir: "{app}"; Flags: postinstall skipifsilent unchecked shellexec
 
 [UninstallDelete]
 Type: filesandordirs; Name: "{app}\node_modules"
