@@ -156,7 +156,37 @@
     <!-- Breadcrumb -->
     <div class="breadcrumb-bar" id="breadcrumbBar">
       <div class="breadcrumb" id="breadcrumb"></div>
-      <div class="content-info" id="contentInfo"></div>
+      <div class="breadcrumb-right">
+        <div class="sort-wrapper" id="sortWrapper">
+          <button class="sort-btn" id="sortBtn" onclick="toggleSortDropdown()" title="정렬">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <line x1="4" y1="6" x2="20" y2="6"/>
+              <line x1="4" y1="12" x2="14" y2="12"/>
+              <line x1="4" y1="18" x2="8" y2="18"/>
+            </svg>
+            <span class="sort-label">이름 ↑</span>
+          </button>
+          <div class="sort-dropdown" id="sortDropdown">
+            <button class="sort-option" onclick="changeSort('name')">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 7V4h16v3"/><path d="M9 20h6"/><path d="M12 4v16"/></svg>
+              이름순
+            </button>
+            <button class="sort-option" onclick="changeSort('size')">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="14" width="6" height="8" rx="1"/><rect x="14" y="4" width="6" height="18" rx="1"/></svg>
+              크기순
+            </button>
+            <button class="sort-option" onclick="changeSort('modified')">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12,6 12,12 16,14"/></svg>
+              수정일순
+            </button>
+            <button class="sort-option" onclick="changeSort('type')">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><polyline points="13,2 13,9 20,9"/></svg>
+              종류순
+            </button>
+          </div>
+        </div>
+        <div class="content-info" id="contentInfo"></div>
+      </div>
     </div>
 
     <!-- File Grid/List -->

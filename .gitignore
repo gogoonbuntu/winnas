@@ -3,3 +3,7 @@ data/
 config.json
 *.log
 .env
+installer_output/
+change_password.js
+reset_devices.js
+test_login.js

@@ -1,9 +1,42 @@
 // ====================================
-// WinNAS - Media Viewer
+// WinNAS - Media Viewer (Audio Leak Fixed)
 // ====================================
 
 var mediaItems = [];
 var currentMediaIndex = -1;
+
+// Thoroughly destroy any video/audio elements to prevent audio leak
+function destroyMediaElements(container) {
+  if (!container) return;
+
+  // Find ALL video and audio elements
+  var videos = container.querySelectorAll('video');
+  var audios = container.querySelectorAll('audio');
+
+  videos.forEach(function(video) {
+    video.pause();
+    video.muted = true;
+    video.currentTime = 0;
+
+    // Remove all source children
+    var sources = video.querySelectorAll('source');
+    sources.forEach(function(s) { s.removeAttribute('src'); s.remove(); });
+
+    video.removeAttribute('src');
+    video.load(); // Forces the browser to release the media resource
+
+    // Remove from DOM immediately
+    video.remove();
+  });
+
+  audios.forEach(function(audio) {
+    audio.pause();
+    audio.muted = true;
+    audio.removeAttribute('src');
+    audio.load();
+    audio.remove();
+  });
+}
 
 async function openMedia(filePath) {
   // Ensure fresh media token before loading media
@@ -12,6 +45,9 @@ async function openMedia(filePath) {
   var overlay = document.getElementById('mediaOverlay');
   var content = document.getElementById('mediaContent');
   var info = document.getElementById('mediaInfo');
+
+  // Destroy any existing media first
+  destroyMediaElements(content);
 
   // Build media items list from current files
   mediaItems = currentFiles.filter(function(f) { return f.type === 'image' || f.type === 'video'; });
@@ -52,16 +88,17 @@ async function openMedia(filePath) {
 
 function closeMedia() {
   var overlay = document.getElementById('mediaOverlay');
-  overlay.style.display = 'none';
+  var content = document.getElementById('mediaContent');
 
-  // Stop any playing video
-  var video = overlay.querySelector('video');
-  if (video) {
-    video.pause();
-    video.removeAttribute('src');
-    video.load();
+  // Thoroughly destroy all media elements before hiding
+  destroyMediaElements(content);
+
+  // Clear the container content
+  if (content) {
+    content.innerHTML = '';
   }
 
+  overlay.style.display = 'none';
   document.removeEventListener('keydown', handleMediaKeydown);
 }
 
@@ -79,13 +116,9 @@ function navigateMedia(direction) {
   var newIndex = currentMediaIndex + direction;
   if (newIndex < 0 || newIndex >= mediaItems.length) return;
 
-  // Stop any playing video
-  var video = document.querySelector('.media-content video');
-  if (video) {
-    video.pause();
-    video.removeAttribute('src');
-    video.load();
-  }
+  // Destroy current media before switching
+  var content = document.getElementById('mediaContent');
+  destroyMediaElements(content);
 
   currentMediaIndex = newIndex;
   renderMediaItem(currentMediaIndex);
@@ -157,6 +190,10 @@ function renderVideo(filePath) {
   var content = document.getElementById('mediaContent');
   var url = getMediaUrl('stream', filePath);
 
+  // Clear previous content first
+  destroyMediaElements(content);
+  content.innerHTML = '';
+
   var video = document.createElement('video');
   video.controls = true;
   video.autoplay = true;
@@ -171,6 +208,8 @@ function renderVideo(filePath) {
   video.appendChild(source);
 
   video.addEventListener('error', function() {
+    // Destroy the failed video
+    destroyMediaElements(content);
     content.innerHTML =
       '<div style="text-align: center; color: #999;">' +
         '<p>이 영상 포맷을 재생할 수 없습니다.</p>' +
@@ -178,7 +217,6 @@ function renderVideo(filePath) {
       '</div>';
   });
 
-  content.innerHTML = '';
   content.appendChild(video);
 }
 

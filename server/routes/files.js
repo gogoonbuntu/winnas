@@ -93,11 +93,15 @@ router.get('/drives', (req, res) => {
   res.json({ drives });
 });
 
-// GET /api/files/browse - Browse directory
+// GET /api/files/browse - Browse directory (with pagination & sorting)
 router.get('/browse', (req, res) => {
   try {
     const config = getConfig();
     const dirPath = req.query.path;
+    const page = Math.max(1, parseInt(req.query.page) || 1);
+    const limit = Math.min(500, Math.max(1, parseInt(req.query.limit) || 100));
+    const sortBy = req.query.sortBy || 'name'; // name, size, modified, type
+    const sortOrder = req.query.sortOrder || 'asc'; // asc, desc
 
     if (!dirPath) {
       return res.status(400).json({ error: 'Path is required' });
@@ -138,12 +142,31 @@ router.get('/browse', (req, res) => {
       }
     }
 
-    // Sort: directories first, then files
+    // Sort: directories always first, then sort within each group
+    const sortMultiplier = sortOrder === 'desc' ? -1 : 1;
     items.sort((a, b) => {
       if (a.isDirectory && !b.isDirectory) return -1;
       if (!a.isDirectory && b.isDirectory) return 1;
-      return a.name.localeCompare(b.name);
+
+      switch (sortBy) {
+        case 'size':
+          return (a.size - b.size) * sortMultiplier;
+        case 'modified':
+          return (new Date(a.modified) - new Date(b.modified)) * sortMultiplier;
+        case 'type':
+          const typeCompare = (a.type || '').localeCompare(b.type || '');
+          return typeCompare !== 0 ? typeCompare * sortMultiplier : a.name.localeCompare(b.name);
+        case 'name':
+        default:
+          return a.name.localeCompare(b.name) * sortMultiplier;
+      }
     });
+
+    // Pagination
+    const totalItems = items.length;
+    const totalPages = Math.ceil(totalItems / limit);
+    const startIndex = (page - 1) * limit;
+    const paginatedItems = items.slice(startIndex, startIndex + limit);
 
     // Build breadcrumb
     const parts = resolvedPath.split(path.sep).filter(Boolean);
@@ -156,8 +179,12 @@ router.get('/browse', (req, res) => {
       currentPath: resolvedPath,
       parentPath: path.dirname(resolvedPath),
       breadcrumb,
-      items,
-      totalItems: items.length
+      items: paginatedItems,
+      totalItems,
+      page,
+      limit,
+      totalPages,
+      hasMore: page < totalPages
     });
   } catch (err) {
     console.error('Browse error:', err);

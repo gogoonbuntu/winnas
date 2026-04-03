@@ -1,10 +1,31 @@
 // ====================================
-// WinNAS - File Manager
+// WinNAS - File Manager (Optimized)
 // ====================================
 
 // Track navigation for back button
 var navHistory = [];
 var isPopState = false;
+
+// Pagination state
+var currentPage = 1;
+var isLoadingMore = false;
+var hasMorePages = false;
+var totalItemCount = 0;
+
+// Sort state
+var currentSort = localStorage.getItem('winnas_sort') || 'name';
+var currentSortOrder = localStorage.getItem('winnas_sortOrder') || 'asc';
+
+function getSortLabel(sortBy, order) {
+  var labels = {
+    name: '이름',
+    size: '크기',
+    modified: '수정일',
+    type: '종류'
+  };
+  var arrow = order === 'asc' ? '↑' : '↓';
+  return (labels[sortBy] || '이름') + ' ' + arrow;
+}
 
 async function navigateTo(filePath, skipPushState) {
   showLoading(true);
@@ -15,9 +36,17 @@ async function navigateTo(filePath, skipPushState) {
   }
 
   currentPath = filePath;
+  currentPage = 1;
+  hasMorePages = false;
+  currentFiles = [];
 
   try {
-    var response = await fetch(API_BASE + '/api/files/browse?path=' + encodeURIComponent(filePath), {
+    var params = 'path=' + encodeURIComponent(filePath) +
+      '&page=1&limit=100' +
+      '&sortBy=' + encodeURIComponent(currentSort) +
+      '&sortOrder=' + encodeURIComponent(currentSortOrder);
+
+    var response = await fetch(API_BASE + '/api/files/browse?' + params, {
       headers: getHeaders()
     });
 
@@ -28,14 +57,24 @@ async function navigateTo(filePath, skipPushState) {
 
     var data = await response.json();
     currentFiles = data.items;
+    hasMorePages = data.hasMore;
+    totalItemCount = data.totalItems;
 
     // Update breadcrumb
     renderBreadcrumb(data);
 
     // Update content info
-    var dirs = data.items.filter(function(i) { return i.isDirectory; }).length;
-    var files = data.items.filter(function(i) { return !i.isDirectory; }).length;
-    document.getElementById('contentInfo').textContent = '폴더 ' + dirs + '개, 파일 ' + files + '개';
+    var dirs = 0, files = 0;
+    // Use totalItems from server for accurate count
+    document.getElementById('contentInfo').textContent =
+      '총 ' + data.totalItems + '개 항목' +
+      (data.totalPages > 1 ? ' (페이지 ' + data.page + '/' + data.totalPages + ')' : '');
+
+    // Update sort button label
+    var sortBtn = document.getElementById('sortBtn');
+    if (sortBtn) {
+      sortBtn.querySelector('.sort-label').textContent = getSortLabel(currentSort, currentSortOrder);
+    }
 
     // Update drive active state
     document.querySelectorAll('.drive-item').forEach(function(btn) {
@@ -44,8 +83,8 @@ async function navigateTo(filePath, skipPushState) {
       btn.classList.toggle('active', filePath.startsWith(drivePath));
     });
 
-    // Render files
-    renderFiles(currentFiles);
+    // Render files (fresh)
+    renderFiles(currentFiles, false);
 
     // Close sidebar on mobile
     document.getElementById('sidebar').classList.remove('open');
@@ -54,6 +93,101 @@ async function navigateTo(filePath, skipPushState) {
     showToast(err.message || '디렉토리를 열 수 없습니다.', 'error');
   } finally {
     showLoading(false);
+  }
+}
+
+// Load more files (infinite scroll)
+async function loadMoreFiles() {
+  if (isLoadingMore || !hasMorePages) return;
+  isLoadingMore = true;
+
+  var nextPage = currentPage + 1;
+
+  try {
+    var params = 'path=' + encodeURIComponent(currentPath) +
+      '&page=' + nextPage + '&limit=100' +
+      '&sortBy=' + encodeURIComponent(currentSort) +
+      '&sortOrder=' + encodeURIComponent(currentSortOrder);
+
+    var response = await fetch(API_BASE + '/api/files/browse?' + params, {
+      headers: getHeaders()
+    });
+
+    if (!response.ok) return;
+
+    var data = await response.json();
+    currentPage = data.page;
+    hasMorePages = data.hasMore;
+
+    // Append new files
+    currentFiles = currentFiles.concat(data.items);
+
+    // Update info
+    document.getElementById('contentInfo').textContent =
+      '총 ' + data.totalItems + '개 항목' +
+      (data.totalPages > 1 ? ' (페이지 ' + data.page + '/' + data.totalPages + ')' : '');
+
+    // Render appended files only
+    renderFiles(data.items, true);
+  } catch (err) {
+    console.error('Load more error:', err);
+  } finally {
+    isLoadingMore = false;
+  }
+}
+
+// Infinite scroll handler
+function setupInfiniteScroll() {
+  var container = document.getElementById('fileContainer');
+  if (!container) return;
+
+  container.addEventListener('scroll', function() {
+    if (!hasMorePages || isLoadingMore) return;
+
+    var scrollTop = container.scrollTop;
+    var scrollHeight = container.scrollHeight;
+    var clientHeight = container.clientHeight;
+
+    // Load more when 300px from bottom
+    if (scrollTop + clientHeight >= scrollHeight - 300) {
+      loadMoreFiles();
+    }
+  });
+}
+
+// Sort function
+function changeSort(sortBy) {
+  if (currentSort === sortBy) {
+    // Toggle order
+    currentSortOrder = currentSortOrder === 'asc' ? 'desc' : 'asc';
+  } else {
+    currentSort = sortBy;
+    currentSortOrder = 'asc';
+  }
+
+  localStorage.setItem('winnas_sort', currentSort);
+  localStorage.setItem('winnas_sortOrder', currentSortOrder);
+
+  // Close dropdown
+  closeSortDropdown();
+
+  // Re-navigate with new sort
+  if (currentPath) {
+    navigateTo(currentPath, true);
+  }
+}
+
+function toggleSortDropdown() {
+  var dropdown = document.getElementById('sortDropdown');
+  if (dropdown) {
+    dropdown.classList.toggle('open');
+  }
+}
+
+function closeSortDropdown() {
+  var dropdown = document.getElementById('sortDropdown');
+  if (dropdown) {
+    dropdown.classList.remove('open');
   }
 }
 
@@ -95,6 +229,14 @@ window.addEventListener('popstate', function(e) {
   }
 });
 
+// Close sort dropdown on outside click
+document.addEventListener('click', function(e) {
+  var sortWrapper = document.getElementById('sortWrapper');
+  if (sortWrapper && !sortWrapper.contains(e.target)) {
+    closeSortDropdown();
+  }
+});
+
 // =================== Breadcrumb ===================
 function renderBreadcrumb(data) {
   var breadcrumb = document.getElementById('breadcrumb');
@@ -127,8 +269,8 @@ function renderBreadcrumb(data) {
   });
 }
 
-// =================== File Rendering ===================
-function renderFiles(files) {
+// =================== File Rendering (Optimized) ===================
+function renderFiles(files, append) {
   var grid = document.getElementById('fileGrid');
   var emptyState = document.getElementById('emptyState');
 
@@ -138,19 +280,32 @@ function renderFiles(files) {
     filtered = files.filter(function(f) { return f.isDirectory || f.type === currentFilter; });
   }
 
-  if (filtered.length === 0) {
+  if (!append) {
+    if (filtered.length === 0) {
+      grid.innerHTML = '';
+      emptyState.style.display = 'flex';
+      return;
+    }
+    emptyState.style.display = 'none';
     grid.innerHTML = '';
-    emptyState.style.display = 'flex';
-    return;
   }
 
-  emptyState.style.display = 'none';
-  grid.innerHTML = '';
+  // Use DocumentFragment for batch DOM insertion
+  var fragment = document.createDocumentFragment();
+  var existingCount = append ? grid.children.length : 0;
 
   filtered.forEach(function(file, index) {
     var card = document.createElement('div');
     card.className = 'file-card' + (file.isDirectory ? ' directory' : '');
-    card.style.animationDelay = Math.min(index * 30, 500) + 'ms';
+    // Only animate first 20 items, rest appear instantly
+    var animIndex = existingCount + index;
+    if (animIndex < 20) {
+      card.style.animationDelay = (animIndex * 30) + 'ms';
+    } else {
+      card.style.animation = 'none';
+      card.style.opacity = '1';
+      card.style.transform = 'none';
+    }
 
     if (file.isDirectory) {
       card.innerHTML =
@@ -219,8 +374,29 @@ function renderFiles(files) {
       }
     }
 
-    grid.appendChild(card);
+    fragment.appendChild(card);
   });
+
+  grid.appendChild(fragment);
+
+  // Show load-more indicator if there are more pages
+  updateLoadMoreIndicator();
+}
+
+function updateLoadMoreIndicator() {
+  var existing = document.getElementById('loadMoreIndicator');
+  if (existing) existing.remove();
+
+  if (hasMorePages) {
+    var grid = document.getElementById('fileGrid');
+    var indicator = document.createElement('div');
+    indicator.id = 'loadMoreIndicator';
+    indicator.className = 'load-more-indicator';
+    indicator.innerHTML =
+      '<div class="spinner small"></div>' +
+      '<span>더 불러오는 중...</span>';
+    grid.parentElement.appendChild(indicator);
+  }
 }
 
 function getFileIcon(type) {
@@ -271,3 +447,8 @@ function downloadFile(filePath) {
     showToast('다운로드에 실패했습니다.', 'error');
   });
 }
+
+// Initialize infinite scroll on DOM ready
+document.addEventListener('DOMContentLoaded', function() {
+  setupInfiniteScroll();
+});
