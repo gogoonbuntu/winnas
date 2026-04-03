@@ -2,7 +2,7 @@
 ; Builds a professional installer for WinNAS personal NAS server
 
 #define MyAppName "WinNAS"
-#define MyAppVersion "1.0.3"
+#define MyAppVersion "1.0.4"
 #define MyAppPublisher "WinNAS"
 #define MyAppURL "https://github.com/gogoonbuntu/winnas"
 #define MyAppExeName "WinNAS_Server.bat"
@@ -27,21 +27,35 @@ PrivilegesRequired=admin
 ArchitecturesInstallIn64BitMode=x64compatible
 MinVersion=10.0
 UninstallDisplayName={#MyAppName}
-ShowLanguageDialog=no
+ShowLanguageDialog=yes
 DisableWelcomePage=no
 
 [Languages]
+Name: "english"; MessagesFile: "compiler:Default.isl"
 Name: "korean"; MessagesFile: "compiler:Languages\Korean.isl"
 
 [Messages]
+english.WelcomeLabel1=Welcome to the WinNAS Setup Wizard
+english.WelcomeLabel2=This will install WinNAS (Personal NAS Server) on your computer.%n%n📋 Requirements:%n  • Windows 10 or later%n  • Node.js 18+ (guided during setup)%n%nClick Next to continue.
+english.FinishedHeadingLabel=WinNAS Setup Complete!
+english.FinishedLabel=WinNAS has been successfully installed.%n%n🔧 To complete the initial setup, please check "Run initial setup" and click Finish.%n%nAfter the setup, you can start the server using the "WinNAS Server" shortcut on your desktop.
+
 korean.WelcomeLabel1=WinNAS 설치 마법사
 korean.WelcomeLabel2=이 설치 프로그램은 WinNAS (개인 NAS 서버)를 컴퓨터에 설치합니다.%n%n📋 필수 요구사항:%n  • Windows 10 이상%n  • Node.js 18+ (설치 과정에서 안내)%n%n설치를 계속하려면 [다음]을 클릭하세요.
 korean.FinishedHeadingLabel=WinNAS 설치 완료!
-korean.FinishedLabel=WinNAS가 성공적으로 설치되었습니다.%n%n🔧 초기 설정을 완료하려면 "초기 설정 실행"을 체크하고 [마침]을 클릭하세요.%n%n설정 완료 후 바탕화면의 "WinNAS 서버 시작" 바로가기로 서버를 시작할 수 있습니다.
+korean.FinishedLabel=WinNAS가 성공적으로 설치되었습니다.%n%n🔧 초기 설정을 완료하려면 "초기 설정 실행"을 체크하고 [마침]을 클릭하세요.%n%n설정 완료 후 바탕화면의 "WinNAS" 바로가기로 서버를 시작할 수 있습니다.
+
+[CustomMessages]
+english.TaskDesktopIcon=Create a desktop shortcut
+english.TaskStartupIcon=Run automatically at Windows startup
+english.RunSetup=Run initial setup (first time only)
+korean.TaskDesktopIcon=바탕화면에 바로가기 생성
+korean.TaskStartupIcon=Windows 시작 시 자동 실행
+korean.RunSetup=초기 설정 실행 (최초 1회 필요)
 
 [Tasks]
-Name: "desktopicon"; Description: "바탕화면에 바로가기 생성"; GroupDescription: "바로가기:"
-Name: "startupicon"; Description: "Windows 시작 시 자동 실행"; GroupDescription: "추가 설정:"; Flags: unchecked
+Name: "desktopicon"; Description: "{cm:TaskDesktopIcon}"; GroupDescription: "Shortcuts:"
+Name: "startupicon"; Description: "{cm:TaskStartupIcon}"; GroupDescription: "Additional settings:"; Flags: unchecked
 
 [Files]
 ; Core server files
@@ -57,6 +71,9 @@ Source: "SETUP.md"; DestDir: "{app}"; Flags: ignoreversion
 Source: "run_setup.bat"; DestDir: "{app}"; Flags: ignoreversion
 Source: "WinNAS_Server.bat"; DestDir: "{app}"; Flags: ignoreversion
 
+; Binaries
+Source: "cloudflared.exe"; DestDir: "{app}"; Flags: ignoreversion
+
 [Icons]
 ; Start Menu
 Name: "{group}\WinNAS Server"; Filename: "{app}\WinNAS_Server.bat"; WorkingDir: "{app}"; IconFilename: "{sys}\shell32.dll"; IconIndex: 18
@@ -71,7 +88,7 @@ Name: "{autodesktop}\WinNAS"; Filename: "{app}\WinNAS_Server.bat"; WorkingDir: "
 Name: "{userstartup}\WinNAS Server"; Filename: "{app}\WinNAS_Server.bat"; WorkingDir: "{app}"; Tasks: startupicon
 
 [Run]
-Filename: "{app}\run_setup.bat"; Description: "초기 설정 실행 (최초 1회 필요)"; WorkingDir: "{app}"; Flags: postinstall skipifsilent unchecked shellexec
+Filename: "{app}\run_setup.bat"; Description: "{cm:RunSetup}"; WorkingDir: "{app}"; Flags: postinstall skipifsilent unchecked shellexec
 
 [UninstallDelete]
 Type: filesandordirs; Name: "{app}\node_modules"

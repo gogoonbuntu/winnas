@@ -5,6 +5,7 @@ const fs = require('fs');
 const cookieParser = require('cookie-parser');
 const helmet = require('helmet');
 const cors = require('cors');
+const { spawn } = require('child_process');
 const { loadConfig } = require('./config');
 const { initDb, userOps, sessionOps } = require('./db');
 
@@ -105,11 +106,38 @@ async function startServer() {
     console.log('║              WinNAS Server Running                   ║');
     console.log('╠══════════════════════════════════════════════════════╣');
     console.log(`║  🌐 Local:  http://localhost:${PORT}                   ║`);
-    console.log('║                                                      ║');
-    console.log('║  Cloudflare Tunnel로 외부 접근 설정:                 ║');
-    console.log(`║  cloudflared tunnel --url http://localhost:${PORT}       ║`);
-    console.log('╚══════════════════════════════════════════════════════╝');
-    console.log('');
+
+    if (config.server.useCloudflareTunnel) {
+      console.log('║  🌐 Cloudflare 터널 연결 중...                       ║');
+      const cloudflaredPath = path.resolve(__dirname, '..', 'cloudflared.exe');
+      
+      const cfProcess = spawn(cloudflaredPath, ['tunnel', '--url', `http://localhost:${PORT}`]);
+      let urlFound = false;
+
+      cfProcess.stderr.on('data', (data) => {
+        const text = data.toString();
+        // Extract https://....trycloudflare.com
+        const match = text.match(/https:\/\/[a-zA-Z0-9-]+\.trycloudflare\.com/);
+        if (match && !urlFound) {
+          urlFound = true;
+          console.log(`║  🌐 Ex-URL: ${match[0].padEnd(38)} ║`);
+          console.log('╚══════════════════════════════════════════════════════╝');
+          console.log('');
+        }
+      });
+
+      cfProcess.on('error', (err) => {
+        console.log('║  [오류] cloudflared.exe 실행 실패!                   ║');
+        console.log('╚══════════════════════════════════════════════════════╝');
+        console.log(err.message);
+      });
+      
+    } else {
+      console.log('║                                                      ║');
+      console.log('║  (외부 접속이 필요한 경우 setup.js를 다시 실행)      ║');
+      console.log('╚══════════════════════════════════════════════════════╝');
+      console.log('');
+    }
   });
 }
 

@@ -80,10 +80,21 @@ async function setup() {
 
   console.log(`  자동 선택된 로컬 드라이브: ${drives.join(', ')}`);
 
-  // 4. Generate config
+  // 4. Cloudflare Tunnel
+  console.log('');
+  const cfInput = await ask('  Cloudflare 터널을 통해 외부에서 접속하시겠습니까? (Y/n): ');
+  const useCloudflareTunnel = cfInput.trim().toLowerCase() !== 'n';
+  if (useCloudflareTunnel) {
+    console.log('  -> 외부 접속이 활성화되었습니다.');
+  } else {
+    console.log('  -> 외부 접속 비활성화됨.');
+  }
+
+  // 5. Generate config
   const config = {
     server: {
       port: 7943,
+      useCloudflareTunnel,
       jwtSecret: crypto.randomBytes(64).toString('hex'),
       sessionExpiry: '7d',
       maxUploadSize: '500mb'
