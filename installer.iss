@@ -2,7 +2,7 @@
 ; Builds a professional installer for WinNAS personal NAS server
 
 #define MyAppName "WinNAS"
-#define MyAppVersion "1.0.1"
+#define MyAppVersion "1.0.2"
 #define MyAppPublisher "WinNAS"
 #define MyAppURL "https://github.com/gogoonbuntu/winnas"
 #define MyAppExeName "WinNAS_Server.bat"

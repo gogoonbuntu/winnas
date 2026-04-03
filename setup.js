@@ -57,22 +57,28 @@ async function setup() {
 
   const passwordHash = await bcrypt.hash(password, 12);
 
-  // 3. Configure drives
+  // 3. Configure drives automatically (exclude C:)
   console.log('');
-  console.log('허용할 드라이브를 설정합니다');
-  console.log('  드라이브 문자를 쉼표로 구분하여 입력하세요 (예: D,E,F)');
-  const drivesInput = await ask('  드라이브: ');
-  const drives = drivesInput.split(',')
-    .map(d => d.trim().toUpperCase())
-    .filter(d => /^[A-Z]$/.test(d))
-    .map(d => `${d}:\\`);
+  console.log('허용할 드라이브를 자동 설정합니다...');
+  
+  let drives = [];
+  try {
+    const output = execSync('wmic logicaldisk where drivetype=3 get caption', { encoding: 'utf-8' });
+    const letters = output.split('\n')
+      .map(line => line.trim())
+      .filter(line => /^[A-Z]:$/.test(line) && line !== 'C:');
+    
+    drives = letters.map(letter => `${letter}\\`);
+  } catch (e) {
+    console.log('  [경고] 드라이브 자동 감지에 실패했습니다. 기본값으로 D:\\ 를 설정합니다.');
+  }
 
   if (drives.length === 0) {
-    console.log('  유효한 드라이브가 없습니다. D:\\ 를 기본값으로 사용합니다.');
+    console.log('  유효한 드라이브가 하나도 없습니다. D:\\ 를 임의로 포함시킵니다.');
     drives.push('D:\\');
   }
 
-  console.log(`  선택된 드라이브: ${drives.join(', ')}`);
+  console.log(`  자동 선택된 로컬 드라이브: ${drives.join(', ')}`);
 
   // 4. Generate config
   const config = {
