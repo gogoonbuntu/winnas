@@ -60,19 +60,19 @@ Source: "start_server.bat"; DestDir: "{app}"; Flags: ignoreversion
 
 [Icons]
 ; Start Menu
-Name: "{group}\WinNAS 서버 시작"; Filename: "{app}\start_server.bat"; WorkingDir: "{app}"; IconFilename: "{sys}\shell32.dll"; IconIndex: 18; Comment: "WinNAS 서버를 시작합니다"
-Name: "{group}\WinNAS 초기 설정"; Filename: "{app}\run_setup.bat"; WorkingDir: "{app}"; IconFilename: "{sys}\shell32.dll"; IconIndex: 21; Comment: "WinNAS 초기 설정을 실행합니다"
-Name: "{group}\WinNAS 대시보드 (브라우저)"; Filename: "http://localhost:7943"; IconFilename: "{sys}\shell32.dll"; IconIndex: 13; Comment: "WinNAS 웹 대시보드를 엽니다"
-Name: "{group}\WinNAS 제거"; Filename: "{uninstallexe}"; Comment: "WinNAS를 제거합니다"
+Name: "{group}\WinNAS Server"; Filename: "{app}\start_server.bat"; WorkingDir: "{app}"; IconFilename: "{sys}\shell32.dll"; IconIndex: 18
+Name: "{group}\WinNAS Setup"; Filename: "{app}\run_setup.bat"; WorkingDir: "{app}"; IconFilename: "{sys}\shell32.dll"; IconIndex: 21
+Name: "{group}\WinNAS Dashboard"; Filename: "http://localhost:7943"; IconFilename: "{sys}\shell32.dll"; IconIndex: 13
+Name: "{group}\Uninstall WinNAS"; Filename: "{uninstallexe}"
 
 ; Desktop
-Name: "{autodesktop}\WinNAS 서버 시작"; Filename: "{app}\start_server.bat"; WorkingDir: "{app}"; IconFilename: "{sys}\shell32.dll"; IconIndex: 18; Tasks: desktopicon; Comment: "WinNAS 서버를 시작합니다"
+Name: "{autodesktop}\WinNAS"; Filename: "{app}\start_server.bat"; WorkingDir: "{app}"; IconFilename: "{sys}\shell32.dll"; IconIndex: 18; Tasks: desktopicon
 
 ; Startup (optional)
 Name: "{userstartup}\WinNAS"; Filename: "{app}\start_server.bat"; WorkingDir: "{app}"; Tasks: startupicon
 
 [Run]
-Filename: "{app}\run_setup.bat"; Description: "🔧 초기 설정 실행 (최초 1회 필요)"; WorkingDir: "{app}"; Flags: nowait postinstall skipifsilent unchecked
+Filename: "cmd.exe"; Parameters: "/K cd /d ""{app}"" && node setup.js"; Description: "Run initial setup (first time only)"; WorkingDir: "{app}"; Flags: postinstall skipifsilent unchecked
 
 [UninstallDelete]
 Type: filesandordirs; Name: "{app}\node_modules"

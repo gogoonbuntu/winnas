@@ -1,8 +1,8 @@
 const readline = require('readline');
-const bcrypt = require('bcryptjs');
 const fs = require('fs');
 const path = require('path');
 const crypto = require('crypto');
+const { execSync } = require('child_process');
 
 const rl = readline.createInterface({
   input: process.stdin,
@@ -14,21 +14,64 @@ function ask(question) {
 }
 
 async function setup() {
-  console.log('\n╔══════════════════════════════════════════════╗');
-  console.log('║         WinNAS - Initial Setup               ║');
-  console.log('╚══════════════════════════════════════════════╝\n');
+  console.log('');
+  console.log('======================================================');
+  console.log('         WinNAS - 초기 설정 마법사');
+  console.log('======================================================');
+  console.log('');
 
-  // 1. Set admin password
+  // 0. Check Node.js version
+  const nodeVersion = process.version;
+  const majorVersion = parseInt(nodeVersion.slice(1).split('.')[0], 10);
+  console.log(`Node.js ${nodeVersion} 감지됨`);
+  if (majorVersion < 18) {
+    console.log('');
+    console.log('[오류] Node.js 18 이상이 필요합니다.');
+    console.log('  https://nodejs.org/ 에서 최신 버전을 설치하세요.');
+    rl.close();
+    process.exit(1);
+  }
+  console.log('');
+
+  // 1. Install npm dependencies
+  console.log('npm 패키지 설치 중... (처음 한 번만 필요)');
+  console.log('  잠시만 기다려주세요...');
+  console.log('');
+  try {
+    execSync('npm install --production', {
+      cwd: __dirname,
+      stdio: 'inherit'
+    });
+  } catch (e) {
+    console.log('');
+    console.log('[오류] npm 패키지 설치에 실패했습니다.');
+    console.log('  인터넷 연결을 확인하고 다시 시도해주세요.');
+    rl.close();
+    process.exit(1);
+  }
+  console.log('');
+  console.log('패키지 설치 완료!');
+  console.log('');
+
+  // Now require packages that were just installed
+  const bcrypt = require('bcryptjs');
+
+  // 2. Set admin password
+  console.log('------------------------------------------------------');
+  console.log('  이제 관리자 비밀번호와 드라이브를 설정합니다');
+  console.log('------------------------------------------------------');
+  console.log('');
+
   let password;
   while (true) {
-    password = await ask('🔑 Set admin password (min 8 characters): ');
+    password = await ask('관리자 비밀번호 설정 (8자 이상): ');
     if (password.length < 8) {
-      console.log('❌ Password must be at least 8 characters.');
+      console.log('[오류] 비밀번호는 8자 이상이어야 합니다.');
       continue;
     }
-    const confirm = await ask('🔑 Confirm password: ');
+    const confirm = await ask('비밀번호 확인: ');
     if (password !== confirm) {
-      console.log('❌ Passwords do not match.');
+      console.log('[오류] 비밀번호가 일치하지 않습니다.');
       continue;
     }
     break;
@@ -36,23 +79,24 @@ async function setup() {
 
   const passwordHash = await bcrypt.hash(password, 12);
 
-  // 2. Configure drives
-  console.log('\n📁 Configure allowed drives');
-  console.log('   Enter drive letters separated by commas (e.g., D,E,F)');
-  const drivesInput = await ask('   Drives: ');
+  // 3. Configure drives
+  console.log('');
+  console.log('허용할 드라이브를 설정합니다');
+  console.log('  드라이브 문자를 쉼표로 구분하여 입력하세요 (예: D,E,F)');
+  const drivesInput = await ask('  드라이브: ');
   const drives = drivesInput.split(',')
     .map(d => d.trim().toUpperCase())
     .filter(d => /^[A-Z]$/.test(d))
     .map(d => `${d}:\\`);
 
   if (drives.length === 0) {
-    console.log('⚠️  No valid drives specified. Using D:\\ as default.');
+    console.log('  유효한 드라이브가 없습니다. D:\\ 를 기본값으로 사용합니다.');
     drives.push('D:\\');
   }
 
-  console.log(`   Selected drives: ${drives.join(', ')}`);
+  console.log(`  선택된 드라이브: ${drives.join(', ')}`);
 
-  // 3. Generate config
+  // 4. Generate config
   const config = {
     server: {
       port: 7943,
@@ -76,9 +120,10 @@ async function setup() {
   // Save config
   const configPath = path.join(__dirname, 'config.json');
   fs.writeFileSync(configPath, JSON.stringify(config, null, 2), 'utf-8');
-  console.log('\n✅ Config saved to config.json');
+  console.log('');
+  console.log('config.json 저장 완료');
 
-  // 4. Create data directory & initialize database
+  // 5. Create data directory & initialize database
   const dataDir = path.join(__dirname, 'data');
   if (!fs.existsSync(dataDir)) {
     fs.mkdirSync(dataDir, { recursive: true });
@@ -141,22 +186,28 @@ async function setup() {
   fs.writeFileSync(path.join(dataDir, 'winnas.db'), dbBuffer);
   db.close();
 
-  console.log('✅ Database initialized');
+  console.log('데이터베이스 초기화 완료');
 
-  console.log('\n╔══════════════════════════════════════════════╗');
-  console.log('║         ✅  Setup Complete!                   ║');
-  console.log('╠══════════════════════════════════════════════╣');
-  console.log('║  Run:  npm start                             ║');
-  console.log('║                                              ║');
-  console.log('║  Then connect Cloudflare Tunnel:              ║');
-  console.log('║  cloudflared tunnel --url http://localhost:7943║');
-  console.log('╚══════════════════════════════════════════════╝\n');
+  console.log('');
+  console.log('======================================================');
+  console.log('  설치가 완료되었습니다!');
+  console.log('======================================================');
+  console.log('');
+  console.log('  서버를 시작하려면:');
+  console.log('    1. 바탕화면의 "WinNAS" 바로가기를 실행하세요');
+  console.log('    2. 또는 start_server.bat 을 실행하세요');
+  console.log('');
+  console.log('  브라우저에서 http://localhost:7943 으로 접속하세요.');
+  console.log('');
+  console.log('  외부에서 접속하려면 Cloudflare Tunnel을 설정하세요:');
+  console.log('    cloudflared tunnel --url http://localhost:7943');
+  console.log('');
 
   rl.close();
 }
 
 setup().catch(err => {
-  console.error('Setup failed:', err);
+  console.error('설정 실패:', err.message || err);
   rl.close();
   process.exit(1);
 });
