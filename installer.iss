@@ -2,10 +2,10 @@
 ; Builds a professional installer for WinNAS personal NAS server
 
 #define MyAppName "WinNAS"
-#define MyAppVersion "1.0.0"
+#define MyAppVersion "1.0.1"
 #define MyAppPublisher "WinNAS"
 #define MyAppURL "https://github.com/gogoonbuntu/winnas"
-#define MyAppExeName "start_server.bat"
+#define MyAppExeName "WinNAS_Server.bat"
 
 [Setup]
 AppId={{E7A3F2B1-5C4D-4E6F-8A9B-1C2D3E4F5A6B}
@@ -55,20 +55,20 @@ Source: "SETUP.md"; DestDir: "{app}"; Flags: ignoreversion
 
 ; Batch scripts
 Source: "run_setup.bat"; DestDir: "{app}"; Flags: ignoreversion
-Source: "start_server.bat"; DestDir: "{app}"; Flags: ignoreversion
+Source: "WinNAS_Server.bat"; DestDir: "{app}"; Flags: ignoreversion
 
 [Icons]
 ; Start Menu
-Name: "{group}\WinNAS Server"; Filename: "{app}\start_server.bat"; WorkingDir: "{app}"; IconFilename: "{sys}\shell32.dll"; IconIndex: 18
+Name: "{group}\WinNAS Server"; Filename: "{app}\WinNAS_Server.bat"; WorkingDir: "{app}"; IconFilename: "{sys}\shell32.dll"; IconIndex: 18
 Name: "{group}\WinNAS Setup"; Filename: "{app}\run_setup.bat"; WorkingDir: "{app}"; IconFilename: "{sys}\shell32.dll"; IconIndex: 21
 Name: "{group}\WinNAS Dashboard"; Filename: "http://localhost:7943"; IconFilename: "{sys}\shell32.dll"; IconIndex: 13
 Name: "{group}\Uninstall WinNAS"; Filename: "{uninstallexe}"
 
 ; Desktop
-Name: "{autodesktop}\WinNAS"; Filename: "{app}\start_server.bat"; WorkingDir: "{app}"; IconFilename: "{sys}\shell32.dll"; IconIndex: 18; Tasks: desktopicon
+Name: "{autodesktop}\WinNAS"; Filename: "{app}\WinNAS_Server.bat"; WorkingDir: "{app}"; IconFilename: "{sys}\shell32.dll"; IconIndex: 18; Tasks: desktopicon
 
 ; Startup (optional)
-Name: "{userstartup}\WinNAS"; Filename: "{app}\start_server.bat"; WorkingDir: "{app}"; Tasks: startupicon
+Name: "{userstartup}\WinNAS Server"; Filename: "{app}\WinNAS_Server.bat"; WorkingDir: "{app}"; Tasks: startupicon
 
 [Run]
 Filename: "cmd.exe"; Parameters: "/K cd /d ""{app}"" && node setup.js"; Description: "Run initial setup (first time only)"; WorkingDir: "{app}"; Flags: postinstall skipifsilent unchecked

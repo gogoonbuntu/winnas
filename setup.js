@@ -33,30 +33,8 @@ async function setup() {
   }
   console.log('');
 
-  // 1. Install npm dependencies
-  console.log('npm 패키지 설치 중... (처음 한 번만 필요)');
-  console.log('  잠시만 기다려주세요...');
-  console.log('');
-  try {
-    execSync('npm install --production', {
-      cwd: __dirname,
-      stdio: 'inherit'
-    });
-  } catch (e) {
-    console.log('');
-    console.log('[오류] npm 패키지 설치에 실패했습니다.');
-    console.log('  인터넷 연결을 확인하고 다시 시도해주세요.');
-    rl.close();
-    process.exit(1);
-  }
-  console.log('');
-  console.log('패키지 설치 완료!');
-  console.log('');
-
-  // Now require packages that were just installed
+  // 1. Set admin password
   const bcrypt = require('bcryptjs');
-
-  // 2. Set admin password
   console.log('------------------------------------------------------');
   console.log('  이제 관리자 비밀번호와 드라이브를 설정합니다');
   console.log('------------------------------------------------------');
@@ -195,7 +173,7 @@ async function setup() {
   console.log('');
   console.log('  서버를 시작하려면:');
   console.log('    1. 바탕화면의 "WinNAS" 바로가기를 실행하세요');
-  console.log('    2. 또는 start_server.bat 을 실행하세요');
+  console.log('    2. 또는 WinNAS_Server.bat 을 실행하세요');
   console.log('');
   console.log('  브라우저에서 http://localhost:7943 으로 접속하세요.');
   console.log('');

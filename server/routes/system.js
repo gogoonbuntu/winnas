@@ -37,8 +37,8 @@ router.put('/startup', async (req, res) => {
     const { enabled } = req.body;
 
     if (enabled) {
-      // Register: use start_server.bat from project root
-      const serverBat = path.resolve(__dirname, '..', '..', 'start_server.bat');
+      // Register: use WinNAS_Server.bat from project root
+      const serverBat = path.resolve(__dirname, '..', '..', 'WinNAS_Server.bat');
       await runCmd(`reg add "${REG_KEY}" /v "${REG_NAME}" /t REG_SZ /d "\\"${serverBat}\\"" /f`);
       res.json({ success: true, enabled: true, message: '시작프로그램에 등록되었습니다.' });
     } else {
